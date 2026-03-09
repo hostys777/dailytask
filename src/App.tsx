@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect } from 'react';
 import { Home, CheckSquare, BarChart2, User as UserIcon } from 'lucide-react';
-import type { Session } from '@supabase/supabase-js';
+import type { Session, AuthChangeEvent } from '@supabase/supabase-js';
 import { HomeFeed } from './components/Home';
 import { Tasks } from './components/Tasks';
 import { Statistics } from './components/Statistics';
@@ -18,13 +18,13 @@ export interface Task {
 }
 
 export default function App() {
-  const [, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [activeTab, setActiveTab] = useState('login'); // Start with login
   const [tasks, setTasks] = useState<Task[]>([]);
   const [, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
       setSession(session);
       if (session) {
         setActiveTab((currentTab) => 
@@ -35,7 +35,7 @@ export default function App() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
       setSession(session);
       if (session) {
         setActiveTab((currentTab) => {
@@ -54,12 +54,13 @@ export default function App() {
   }, []);
 
   // Fetch tasks from Supabase
-  const fetchTasks = async () => {
+  const fetchTasks = async (userId: string) => {
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
+        .eq('user_id', userId)
         .order('id', { ascending: false });
 
       if (error) throw error;
@@ -72,8 +73,12 @@ export default function App() {
   };
 
   useEffect(() => {
-    fetchTasks();
-  }, []);
+    if (session?.user?.id) {
+      fetchTasks(session.user.id);
+    } else {
+      setTasks([]);
+    }
+  }, [session?.user?.id]);
 
   const toggleTask = async (id: number) => {
     const task = tasks.find(t => t.id === id);
@@ -93,21 +98,30 @@ export default function App() {
     } catch (error) {
       console.error('Error updating task:', error);
       // Revert if error
-      fetchTasks();
+      if (session?.user?.id) fetchTasks(session.user.id);
     }
   };
 
   const addTask = async (newTask: { title: string; category: string; points: number }) => {
+    if (!session?.user?.id) {
+      console.warn('Cannot add task: User is not logged in.');
+      return;
+    }
+
+    const taskPayload = { 
+      title: newTask.title, 
+      category: newTask.category, 
+      points: newTask.points, 
+      completed: false,
+      user_id: session.user.id
+    };
+    
+    console.log('Sending new task to Supabase:', taskPayload);
+
     try {
       const { data, error } = await supabase
         .from('tasks')
-        .insert([{ 
-          title: newTask.title, 
-          category: newTask.category, 
-          points: newTask.points, 
-          completed: false 
-        }])
-        .select();
+        .insert([taskPayload])
 
       if (error) throw error;
       if (data) {
