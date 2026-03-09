@@ -1,30 +1,111 @@
-﻿import React, { useState } from 'react';
-import { Home, CheckSquare, BarChart2, User } from 'lucide-react';
+﻿import { useState, useEffect } from 'react';
+import { Home, CheckSquare, BarChart2, User as UserIcon } from 'lucide-react';
+import type { Session } from '@supabase/supabase-js';
 import { HomeFeed } from './components/Home';
 import { Tasks } from './components/Tasks';
 import { Statistics } from './components/Statistics';
 import { Profile } from './components/Profile';
 import { AddTask } from './components/AddTask';
 import { AuthPage } from './components/AuthPage';
+import { supabase } from './lib/supabase';
+
+export interface Task {
+  id: number;
+  title: string;
+  category: string;
+  points: number;
+  completed: boolean;
+}
 
 export default function App() {
+  const [, setSession] = useState<Session | null>(null);
   const [activeTab, setActiveTab] = useState('login'); // Start with login
-  const [tasks, setTasks] = useState([
-    { id: 1, title: '早起喝一杯排毒水', category: '健康生活', points: 10, completed: true },
-    { id: 2, title: '学习React两小时', category: '自我提升', points: 20, completed: false },
-    { id: 3, title: '跑步3公里', category: '运动健身', points: 15, completed: false },
-    { id: 4, title: '阅读10页书', category: '自我提升', points: 10, completed: false },
-    { id: 5, title: '清理桌面工作区', category: '其他', points: 5, completed: false },
-  ]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [, setLoading] = useState(true);
 
-  const toggleTask = (id: number) => {
-    setTasks(tasks.map(task => 
-      task.id === id ? { ...task, completed: !task.completed } : task
-    ));
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) setActiveTab('home');
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) {
+        if (activeTab === 'login' || activeTab === 'register') setActiveTab('home');
+      } else {
+        setActiveTab('login');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [activeTab]);
+
+  // Fetch tasks from Supabase
+  const fetchTasks = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .order('id', { ascending: false });
+
+      if (error) throw error;
+      if (data) setTasks(data);
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const addTask = (newTask: { title: string; category: string; points: number }) => {
-    setTasks([...tasks, { id: Date.now(), ...newTask, completed: false }]);
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  const toggleTask = async (id: number) => {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+
+    // Optimistic update
+    setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+
+    // Update in Supabase
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update({ completed: !task.completed })
+        .eq('id', id);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating task:', error);
+      // Revert if error
+      fetchTasks();
+    }
+  };
+
+  const addTask = async (newTask: { title: string; category: string; points: number }) => {
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert([{ 
+          title: newTask.title, 
+          category: newTask.category, 
+          points: newTask.points, 
+          completed: false 
+        }])
+        .select();
+
+      if (error) throw error;
+      if (data) {
+        setTasks([...tasks, data[0]]);
+      }
+    } catch (error) {
+      console.error('Error adding task:', error);
+    }
   };
 
   // Pages that don't need BottomNav
@@ -75,11 +156,11 @@ export default function App() {
           <BarChart2 size={24} />
           <span className="text-[10px] mt-1 font-medium">统计</span>
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('profile')}
           className={`flex flex-col items-center py-3 px-4 ${activeTab === 'profile' ? 'text-primary drop-shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
         >
-          <User size={24} />
+          <UserIcon size={24} />
           <span className="text-[10px] mt-1 font-medium">我的</span>
         </button>
       </nav>

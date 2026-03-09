@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Search, CheckCircle2, Circle } from 'lucide-react';
 
 interface Task {

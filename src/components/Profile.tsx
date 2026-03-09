@@ -1,11 +1,26 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { User, Settings, Bell, HelpCircle, ChevronRight, LogOut, Award, CreditCard } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface ProfileProps {
   onNavigate: (page: string) => void;
 }
 
 export function Profile({ onNavigate }: ProfileProps) {
+  const [userEmail, setUserEmail] = useState<string | null>('');
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        setUserEmail(user.email ?? '用户');
+      }
+    });
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    onNavigate('login');
+  };
   return (
     <div className="flex-1 overflow-y-auto pb-20 bg-gray-50">
       <header className="px-4 py-4 bg-white sticky top-0 z-10 shadow-sm text-center">
@@ -19,7 +34,7 @@ export function Profile({ onNavigate }: ProfileProps) {
             <User size={32} className="text-primary" />
           </div>
           <div className="flex-1">
-            <h2 className="text-lg font-bold text-gray-800">学习达人</h2>
+            <h2 className="text-lg font-bold text-gray-800">{userEmail}</h2>
             <p className="text-sm text-gray-500 mt-1">ID: 88481234</p>
           </div>
           <button className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-xs font-medium rounded-full text-gray-600 transition-colors">
@@ -57,8 +72,8 @@ export function Profile({ onNavigate }: ProfileProps) {
         </div>
 
         {/* Logout Button */}
-        <button 
-          onClick={() => onNavigate('login')}
+        <button
+          onClick={handleLogout}
           className="w-full bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center justify-center gap-2 text-red-500 font-medium hover:bg-red-50 transition-colors"
         >
           <LogOut size={20} />

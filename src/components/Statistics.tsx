@@ -1,5 +1,4 @@
-import React from 'react';
-import { Award, TrendingUp, CheckSquare, Target } from 'lucide-react';
+import { Award, TrendingUp, Target } from 'lucide-react';
 
 export function Statistics() {
   return (

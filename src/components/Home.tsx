@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { User, Plus, CheckCircle2, Circle, Award, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Task {

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { User, Lock, Mail, ArrowLeft } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface AuthProps {
   onNavigate: (page: string) => void;
@@ -10,11 +11,39 @@ export function AuthPage({ onNavigate, isLogin = true }: AuthProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate login/register
-    onNavigate('home');
+    setLoading(true);
+    setErrorMsg('');
+    
+    try {
+      if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: name,
+            }
+          }
+        });
+        if (error) throw error;
+        // Optionally show success message for registration
+      }
+    } catch (error: any) {
+      setErrorMsg(error.message || '发生错误，请重试');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -94,11 +123,18 @@ export function AuthPage({ onNavigate, isLogin = true }: AuthProps) {
             )}
           </div>
 
+          {errorMsg && (
+            <div className="text-red-500 text-sm mt-2 text-center">
+              {errorMsg}
+            </div>
+          )}
+
           <button
             type="submit"
-            className="w-full bg-primary text-white font-bold py-3.5 rounded-lg shadow-md hover:bg-primary/90 transition-colors mt-8"
+            disabled={loading}
+            className="w-full bg-primary disabled:bg-primary/50 text-white font-bold py-3.5 rounded-lg shadow-md hover:bg-primary/90 transition-colors mt-8"
           >
-            {isLogin ? '登 录' : '注 册'}
+            {loading ? '请稍候...' : (isLogin ? '登录' : '注册')}
           </button>
         </form>
 
