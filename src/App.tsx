@@ -1,7 +1,19 @@
-﻿import React from 'react';
+﻿import React, { useState } from 'react';
 import { Home, CheckSquare, BarChart2, User, Plus, CheckCircle2, Circle, Award, ChevronLeft, ChevronRight } from 'lucide-react';
 
 function App() {
+  const [activeTab, setActiveTab] = useState('home');
+  const [tasks, setTasks] = useState([
+    { id: 1, title: '早起喝一杯排毒水', category: '健康生活', points: 10, completed: true },
+    { id: 2, title: '学习React两小时', category: '自我提升', points: 20, completed: false },
+    { id: 3, title: '跑步3公里', category: '运动健身', points: 15, completed: false },
+  ]);
+
+  const toggleTask = (id: number) => {
+    setTasks(tasks.map(task => 
+      task.id === id ? { ...task, completed: !task.completed } : task
+    ));
+  };
   return (
     <div className="w-full max-w-md mx-auto bg-gray-50 min-h-screen pb-20 font-sans shadow-lg overflow-hidden flex flex-col relative">
       <div className="flex-1 overflow-y-auto">
@@ -42,34 +54,26 @@ function App() {
           </div>
           
           <div className="space-y-3">
-            {/* Completed */}
-            <div className="bg-white rounded-lg p-4 flex items-center shadow-sm border border-gray-100">
-              <CheckCircle2 size={24} className="text-green-500 flex-shrink-0" />
-              <div className="ml-3 flex-1">
-                <div className="font-medium text-gray-800 line-through">早起喝一杯排毒水</div>
-                <div className="text-xs text-gray-500 mt-1">健康生活</div>
+            {tasks.map(task => (
+              <div 
+                key={task.id} 
+                className="bg-white rounded-lg p-4 flex items-center shadow-sm border border-gray-100 cursor-pointer transition-all hover:bg-gray-50"
+                onClick={() => toggleTask(task.id)}
+              >
+                {task.completed ? (
+                  <CheckCircle2 size={24} className="text-green-500 flex-shrink-0" />
+                ) : (
+                  <Circle size={24} className="text-gray-300 flex-shrink-0" />
+                )}
+                <div className="ml-3 flex-1">
+                  <div className={`font-medium ${task.completed ? 'text-gray-800 line-through opacity-70' : 'text-gray-800'}`}>
+                    {task.title}
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">{task.category}</div>
+                </div>
+                <div className="text-sm text-yellow-500 font-medium">+{task.points} 积分</div>
               </div>
-              <div className="text-sm text-yellow-500 font-medium">+10 积分</div>
-            </div>
-
-            {/* Uncompleted */}
-            <div className="bg-white rounded-lg p-4 flex items-center shadow-sm border border-gray-100">
-              <Circle size={24} className="text-gray-300 flex-shrink-0" />
-              <div className="ml-3 flex-1">
-                <div className="font-medium text-gray-800">学习React两小时</div>
-                <div className="text-xs text-gray-400 mt-1">自我提升</div>
-              </div>
-              <div className="text-sm text-yellow-500 font-medium">+20 积分</div>
-            </div>
-
-            <div className="bg-white rounded-lg p-4 flex items-center shadow-sm border border-gray-100">
-              <Circle size={24} className="text-gray-300 flex-shrink-0" />
-              <div className="ml-3 flex-1">
-                <div className="font-medium text-gray-800">跑步3公里</div>
-                <div className="text-xs text-gray-400 mt-1">运动健身</div>
-              </div>
-              <div className="text-sm text-yellow-500 font-medium">+15 积分</div>
-            </div>
+            ))}
 
             {/* Add Task Button */}
             <button className="w-full mt-4 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center text-gray-500 hover:bg-gray-50 transition-colors flex flex-col items-center justify-center gap-1">
@@ -150,20 +154,32 @@ function App() {
       </div>
 
       {/* Bottom Nav */}
-      <nav className="bg-white border-t border-gray-200 flex justify-around items-center absolute bottom-0 w-full z-10">
-        <button className="flex flex-col items-center py-3 px-4 text-primary">
+      <nav className="bg-white border-t border-gray-200 flex justify-around items-center absolute bottom-0 w-full z-10 pb-safe">
+        <button 
+          onClick={() => setActiveTab('home')}
+          className={`flex flex-col items-center py-3 px-4 ${activeTab === 'home' ? 'text-primary' : 'text-gray-400'}`}
+        >
           <Home size={24} />
           <span className="text-[10px] mt-1 font-medium">首页</span>
         </button>
-        <button className="flex flex-col items-center py-3 px-4 text-gray-400">
+        <button 
+          onClick={() => setActiveTab('tasks')}
+          className={`flex flex-col items-center py-3 px-4 ${activeTab === 'tasks' ? 'text-primary' : 'text-gray-400'}`}
+        >
           <CheckSquare size={24} />
           <span className="text-[10px] mt-1">任务</span>
         </button>
-        <button className="flex flex-col items-center py-3 px-4 text-gray-400">
+        <button 
+          onClick={() => setActiveTab('stats')}
+          className={`flex flex-col items-center py-3 px-4 ${activeTab === 'stats' ? 'text-primary' : 'text-gray-400'}`}
+        >
           <BarChart2 size={24} />
           <span className="text-[10px] mt-1">统计</span>
         </button>
-        <button className="flex flex-col items-center py-3 px-4 text-gray-400">
+        <button 
+          onClick={() => setActiveTab('profile')}
+          className={`flex flex-col items-center py-3 px-4 ${activeTab === 'profile' ? 'text-primary' : 'text-gray-400'}`}
+        >
           <User size={24} />
           <span className="text-[10px] mt-1">我的</span>
         </button>
