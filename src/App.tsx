@@ -26,7 +26,11 @@ export default function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session) setActiveTab('home');
+      if (session) {
+        setActiveTab((currentTab) => 
+          (currentTab === 'login' || currentTab === 'register') ? 'home' : currentTab
+        );
+      }
     });
 
     const {
@@ -34,14 +38,20 @@ export default function App() {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session) {
-        if (activeTab === 'login' || activeTab === 'register') setActiveTab('home');
+        setActiveTab((currentTab) => {
+          if (currentTab === 'login' || currentTab === 'register') return 'home';
+          return currentTab;
+        });
       } else {
-        setActiveTab('login');
+        setActiveTab((currentTab) => {
+          if (currentTab !== 'login' && currentTab !== 'register') return 'login';
+          return currentTab;
+        });
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [activeTab]);
+  }, []);
 
   // Fetch tasks from Supabase
   const fetchTasks = async () => {
