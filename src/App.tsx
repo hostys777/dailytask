@@ -103,7 +103,7 @@ export default function App() {
     }
   };
 
-  const addTask = async (newTask: { title: string; category: string; points: number }) => {
+  const addTask = async (newTask: { title: string; category: string; points: number; [key: string]: any }) => {
     if (!session?.user?.id) {
       console.warn('Cannot add task: User is not logged in.');
       return;
