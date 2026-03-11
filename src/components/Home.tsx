@@ -1,13 +1,7 @@
 
 import { User, Plus, CheckCircle2, Circle, Award, ChevronLeft, ChevronRight } from 'lucide-react';
-
-interface Task {
-  id: number;
-  title: string;
-  category: string;
-  points: number;
-  completed: boolean;
-}
+import { useMemo, useState } from 'react';
+import type { Task } from '../App';
 
 interface HomeProps {
   tasks: Task[];
@@ -16,8 +10,120 @@ interface HomeProps {
 }
 
 export function HomeFeed({ tasks, toggleTask, onNavigate }: HomeProps) {
-  // Get today's top 3 tasks for the home screen
-  const todayTasks = tasks.slice(0, 3);
+  // Navigation for month view
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  const { todayTasks, stats, calendarDays } = useMemo(() => {
+    // Top 3 tasks for today
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const todayTasks = tasks.filter(t => t.created_at && t.created_at.startsWith(todayStr)).slice(0, 3);
+
+    // If no tasks today, fallback so it's not totally empty (optional)
+    const displayTasks = todayTasks.length > 0 ? todayTasks : tasks.slice(0, 3);
+    
+    // Monthly statistics
+    const currentMonthTasks = tasks.filter(t => {
+      if (!t.created_at) return false;
+      const tDate = new Date(t.created_at);
+      return tDate.getFullYear() === currentDate.getFullYear() && tDate.getMonth() === currentDate.getMonth();
+    });
+
+    const monthlyCompleted = currentMonthTasks.filter(t => t.completed);
+    const completionRate = currentMonthTasks.length > 0 
+      ? Math.round((monthlyCompleted.length / currentMonthTasks.length) * 100) 
+      : 0;
+
+    const monthlyPoints = monthlyCompleted.reduce((acc, curr) => acc + curr.points, 0);
+
+    const formatDate = (date: Date) => {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    };
+
+    const monthlyCompletedDates = Array.from(new Set(
+      monthlyCompleted.filter(t => t.created_at).map(t => formatDate(new Date(t.created_at!)))
+    ));
+
+    const checkinDays = monthlyCompletedDates.length;
+
+    // Consecutive Check-in (global)
+    const allCompletedDates = Array.from(new Set(
+      tasks.filter(t => t.completed && t.created_at).map(t => formatDate(new Date(t.created_at!)))
+    )).sort((a, b) => a.localeCompare(b));
+
+    let currentStreak = 0;
+    if (allCompletedDates.length > 0) {
+      currentStreak = 1;
+      for (let i = allCompletedDates.length - 1; i > 0; i--) {
+        const d1 = new Date(allCompletedDates[i-1]);
+        const d2 = new Date(allCompletedDates[i]);
+        const diffDays = Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) {
+          currentStreak++;
+        } else if (diffDays > 1) {
+          break;
+        }
+      }
+      
+      // Check if streak is still active today or yesterday
+      const lastDateStr = allCompletedDates[allCompletedDates.length - 1];
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      if (lastDateStr !== formatDate(today) && lastDateStr !== formatDate(yesterday)) {
+        currentStreak = 0;
+      }
+    }
+
+    // Calendar logic
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDayOfMonth = new Date(year, month, 1);
+    const lastDayOfMonth = new Date(year, month + 1, 0);
+    const daysInMonth = lastDayOfMonth.getDate();
+    const startingDay = firstDayOfMonth.getDay(); // 0-6
+
+    const previousMonthLastDay = new Date(year, month, 0).getDate();
+
+    const days = [];
+    
+    // Prev month days
+    for (let i = 0; i < startingDay; i++) {
+      days.push({ day: previousMonthLastDay - startingDay + i + 1, isCurrentMonth: false, isCompleted: false, isToday: false });
+    }
+
+    // Current month days
+    for (let i = 1; i <= daysInMonth; i++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+      const isCompleted = monthlyCompletedDates.includes(dateStr);
+      const isToday = todayStr === dateStr;
+      days.push({ day: i, isCurrentMonth: true, isCompleted, isToday });
+    }
+
+    // Next month days to fill 6 rows (42 days) sometimes 35
+    const remainingSlots = 42 - days.length;
+    for (let i = 1; i <= remainingSlots; i++) {
+        days.push({ day: i, isCurrentMonth: false, isCompleted: false, isToday: false });
+    }
+
+    return { 
+      todayTasks: displayTasks, 
+      stats: { currentStreak, completionRate, checkinDays, monthlyPoints },
+      calendarDays: days
+    };
+  }, [tasks, currentDate]);
+
+  const prevMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  };
+
+  const nextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  };
 
   return (
     <div className="flex-1 overflow-y-auto pb-20">
@@ -40,15 +146,15 @@ export function HomeFeed({ tasks, toggleTask, onNavigate }: HomeProps) {
             <Award size={24} className="text-yellow-300" />
           </div>
           <div className="flex items-baseline mb-4">
-            <span className="text-4xl font-bold">12</span>
+            <span className="text-4xl font-bold">{stats.currentStreak}</span>
             <span className="ml-1 text-sm opacity-80">天</span>
           </div>
           <div className="bg-white/20 rounded-full h-2 mb-2 overflow-hidden">
-            <div className="bg-white h-full rounded-full transition-all duration-1000" style={{ width: '60%' }}></div>
+            <div className="bg-white h-full rounded-full transition-all duration-1000" style={{ width: `${Math.min((stats.currentStreak / 21) * 100, 100)}%` }}></div>
           </div>
           <div className="flex justify-between text-xs opacity-80">
             <span>当前进度</span>
-            <span>距离目标还差8天</span>
+            <span>距离目标还差{Math.max(21 - stats.currentStreak, 0)}天</span>
           </div>
         </div>
       </div>
@@ -112,17 +218,17 @@ export function HomeFeed({ tasks, toggleTask, onNavigate }: HomeProps) {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
           <div className="flex justify-between items-center text-center mb-6 pt-2">
             <div>
-              <div className="text-2xl font-bold text-gray-800">85%</div>
+              <div className="text-2xl font-bold text-gray-800">{stats.completionRate}%</div>
               <div className="text-xs text-gray-500 mt-1">完成率</div>
             </div>
             <div className="w-px h-10 bg-gray-200"></div>
             <div>
-              <div className="text-2xl font-bold text-gray-800">24</div>
+              <div className="text-2xl font-bold text-gray-800">{stats.checkinDays}</div>
               <div className="text-xs text-gray-500 mt-1">本月打卡</div>
             </div>
             <div className="w-px h-10 bg-gray-200"></div>
             <div>
-              <div className="text-2xl font-bold text-yellow-500">320</div>
+              <div className="text-2xl font-bold text-yellow-500">{stats.monthlyPoints}</div>
               <div className="text-xs text-gray-500 mt-1">获得积分</div>
             </div>
           </div>
@@ -130,10 +236,10 @@ export function HomeFeed({ tasks, toggleTask, onNavigate }: HomeProps) {
           {/* Calendar */}
           <div>
             <div className="flex justify-between items-center mb-4">
-              <span className="font-medium text-sm">2026年3月</span>
+              <span className="font-medium text-sm">{currentDate.getFullYear()}年{currentDate.getMonth() + 1}月</span>
               <div className="flex gap-2">
-                <ChevronLeft size={16} className="text-gray-400 cursor-pointer hover:text-gray-700" />
-                <ChevronRight size={16} className="text-gray-400 cursor-pointer hover:text-gray-700" />
+                <ChevronLeft size={16} className="text-gray-400 cursor-pointer hover:text-gray-700" onClick={prevMonth} />
+                <ChevronRight size={16} className="text-gray-400 cursor-pointer hover:text-gray-700" onClick={nextMonth} />
               </div>
             </div>
             <div className="grid grid-cols-7 gap-1 text-center text-xs mb-2">
@@ -146,30 +252,26 @@ export function HomeFeed({ tasks, toggleTask, onNavigate }: HomeProps) {
               <div className="text-gray-400">六</div>
             </div>
             <div className="grid grid-cols-7 gap-1 text-center text-sm">
-              <div className="p-1 opacity-40">22</div>
-              <div className="p-1 opacity-40">23</div>
-              {[...Array(6)].map((_, i) => (
-                <div key={`d1-${i}`} className="p-1 m-0.5 rounded-full bg-primary/10 text-primary">
-                  {i + 24}
-                </div>
-              ))}
-              <div className="p-1 m-0.5 rounded-full bg-gray-100 text-gray-700">2</div>
-              {[...Array(4)].map((_, i) => (
-                <div key={`d2-${i}`} className="p-1 m-0.5 rounded-full bg-primary/10 text-primary">
-                  {i + 3}
-                </div>
-              ))}
-              <div className="p-1 m-0.5 rounded-full bg-gray-100 text-gray-700">7</div>
-              {[...Array(2)].map((_, i) => (
-                <div key={`d3-${i}`} className="p-1 m-0.5 rounded-full bg-primary/10 text-primary">
-                  {i + 8}
-                </div>
-              ))}
-              {[...Array(14)].map((_, i) => (
-                <div key={`u-${i}`} className={`p-1 m-0.5 rounded-full ${i===0 ? 'bg-primary text-white font-bold shadow-sm' : ''}`}>
-                  {i + 10}
-                </div>
-              ))}
+              {calendarDays.map((d, i) => {
+                let className = "p-1 m-0.5 rounded-full ";
+                if (!d.isCurrentMonth) {
+                  className += "opacity-40 text-gray-500";
+                } else if (d.isToday && d.isCompleted) {
+                  className += "bg-primary text-white font-bold shadow-sm";
+                } else if (d.isToday) {
+                  className += "border border-primary text-primary font-bold";
+                } else if (d.isCompleted) {
+                  className += "bg-primary/10 text-primary";
+                } else {
+                  className += "text-gray-700";
+                }
+
+                return (
+                  <div key={i} className={className}>
+                    {d.day}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

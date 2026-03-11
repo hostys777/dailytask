@@ -192,7 +192,7 @@ export default function App() {
       {activeTab === 'home' && <HomeFeed tasks={tasks} toggleTask={toggleTask} onNavigate={setActiveTab} />}
       {activeTab === 'tasks' && <Tasks tasks={tasks} toggleTask={toggleTask} deleteTasks={deleteTasks} completeTasks={completeTasks} />}
       {activeTab === 'stats' && <Statistics tasks={tasks} />}
-      {activeTab === 'profile' && <Profile onNavigate={setActiveTab} />}
+      {activeTab === 'profile' && <Profile onNavigate={setActiveTab} tasks={tasks} />}
 
       {/* Bottom Nav */}
       <nav className="bg-white border-t border-gray-200 flex justify-around items-center absolute bottom-0 w-full z-10 pb-1 text-sm">

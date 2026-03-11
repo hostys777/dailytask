@@ -127,33 +127,70 @@ export function Statistics({ tasks = [] }: StatisticsProps) {
             <h3 className="font-bold text-gray-800">近七天打卡趋势</h3>
             <TrendingUp size={18} className="text-gray-400" />
           </div>
-          <div className="h-40 flex items-end justify-between gap-2 mt-4 relative pt-6">
-            {stats.trendData.map((dayData, i) => {
-              const heightStr = `${Math.max((dayData.completedCount / stats.maxTrendValue) * 100, 4)}%`; // 4% is minimum bar height
-              const isSelected = selectedDay === i;
-              
-              return (
-                <div 
-                  key={i} 
-                  className="w-full flex flex-col items-center gap-2 relative cursor-pointer"
-                  onClick={() => setSelectedDay(isSelected ? null : i)}
-                >
-                  <div
-                    className={`w-full rounded-t-md transition-all duration-300 ${isSelected ? 'bg-primary/80' : 'bg-primary/20 hover:bg-primary/40'}`}
-                    style={{ height: heightStr }}
-                  />
-                  {isSelected && (
-                     <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded shadow-lg whitespace-nowrap z-20">
-                       完成了 {dayData.completedCount} 项
-                       <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
-                     </div>
-                  )}
-                  <div className={`text-[10px] ${isSelected ? 'text-primary font-bold' : 'text-gray-400'}`}>
-                    {dayData.label}
+          <div className="h-48 mt-4 relative pt-4 pb-6">
+            {/* SVG Line Chart */}
+            <svg className="w-full h-full absolute inset-0 pb-6 pt-4 px-3" preserveAspectRatio="none" viewBox="0 0 100 100">
+              <defs>
+                <linearGradient id="line-gradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="rgb(14 165 233)" stopOpacity="0.3"></stop>
+                  <stop offset="100%" stopColor="rgb(14 165 233)" stopOpacity="0"></stop>
+                </linearGradient>
+              </defs>
+              <polyline
+                fill="url(#line-gradient)"
+                stroke="none"
+                points={`0,100 ${stats.trendData.map((d, i) => `${(i / 6) * 100},${100 - (d.completedCount / stats.maxTrendValue) * 100}`).join(' ')} 100,100`}
+                vectorEffect="non-scaling-stroke"
+              />
+              <polyline
+                fill="none"
+                stroke="rgb(14 165 233)"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                points={stats.trendData.map((d, i) => `${(i / 6) * 100},${100 - (d.completedCount / stats.maxTrendValue) * 100}`).join(' ')}
+                vectorEffect="non-scaling-stroke"
+              />
+            </svg>
+            
+            <div className="absolute inset-0 pb-6 pt-4 px-3">
+              {stats.trendData.map((dayData, i) => {
+                const xPercent = (i / 6) * 100;
+                const yPercent = 100 - (dayData.completedCount / stats.maxTrendValue) * 100;
+                const isSelected = selectedDay === i;
+                
+                return (
+                  <div 
+                    key={i} 
+                    className="absolute flex flex-col items-center cursor-pointer group z-10"
+                    style={{ left: `${xPercent}%`, top: 0, height: '100%', width: '40px', transform: 'translateX(-50%)' }}
+                    onClick={() => setSelectedDay(isSelected ? null : i)}
+                  >
+                    {/* Interactive Hover Area (Transparent) */}
+                    <div className="absolute w-full h-full"></div>
+                    
+                    {isSelected && (
+                      <div className="absolute top-1/2 -translate-y-[calc(100%+20px)] left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded shadow-lg whitespace-nowrap z-20"
+                           style={{ marginTop: `${yPercent}%` }}>
+                        完成了 {dayData.completedCount} 项
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                      </div>
+                    )}
+                    
+                    {/* Chart Data Point */}
+                    <div 
+                      className={`absolute w-3 h-3 rounded-full border-2 transition-all duration-300 ${isSelected ? 'bg-primary border-white scale-125 shadow-md' : 'bg-white border-primary group-hover:scale-110'}`}
+                      style={{ top: `calc(${yPercent}% - 6px)`, left: '50%', transform: 'translateX(-50%)' }}
+                    ></div>
+                    
+                    {/* X-axis Label */}
+                    <div className={`absolute bottom-[-24px] text-[10px] w-12 text-center -translate-x-1/2 left-1/2 ${isSelected ? 'text-primary font-bold' : 'text-gray-400'}`}>
+                      {dayData.label}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
 

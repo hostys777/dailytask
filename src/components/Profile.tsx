@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { User, Settings, Bell, HelpCircle, ChevronRight, LogOut, Award, CreditCard } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import type { Task } from '../App';
 
 interface ProfileProps {
   onNavigate: (page: string) => void;
+  tasks: Task[];
 }
 
-export function Profile({ onNavigate }: ProfileProps) {
+export function Profile({ onNavigate, tasks }: ProfileProps) {
   const [userEmail, setUserEmail] = useState<string | null>('');
 
   useEffect(() => {
@@ -16,6 +18,49 @@ export function Profile({ onNavigate }: ProfileProps) {
       }
     });
   }, []);
+
+  const stats = useMemo(() => {
+    const completedTasks = tasks.filter(t => t.completed);
+    
+    // Total Points
+    const totalPoints = completedTasks.reduce((acc, curr) => acc + curr.points, 0);
+
+    // Unique Check-in Dates
+    const formatDate = (date: Date) => {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    };
+
+    const completedDates = Array.from(new Set(
+      completedTasks.filter(t => t.created_at).map(t => formatDate(new Date(t.created_at!)))
+    )).sort((a, b) => a.localeCompare(b));
+
+    const checkinDays = completedDates.length;
+
+    // Calculate Badges (Based on max streak like Statistics)
+    let maxStreak = completedDates.length > 0 ? 1 : 0;
+    let currentStreak = completedDates.length > 0 ? 1 : 0;
+    for (let i = 1; i < completedDates.length; i++) {
+        const d1 = new Date(completedDates[i-1]);
+        const d2 = new Date(completedDates[i]);
+        const diffDays = Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) {
+            currentStreak++;
+            maxStreak = Math.max(maxStreak, currentStreak);
+        } else if (diffDays > 1) {
+            currentStreak = 1;
+        }
+    }
+    
+    let badgesCount = 0;
+    if (maxStreak >= 3) badgesCount++;
+    if (maxStreak >= 7) badgesCount++;
+    if (maxStreak >= 30) badgesCount++;
+
+    return { totalPoints, checkinDays, badgesCount };
+  }, [tasks]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -44,15 +89,15 @@ export function Profile({ onNavigate }: ProfileProps) {
 
         <div className="grid grid-cols-3 gap-4 mt-6 text-center divide-x divide-gray-100">
           <div>
-            <div className="text-xl font-bold text-gray-800">42</div>
+            <div className="text-xl font-bold text-gray-800">{stats.checkinDays}</div>
             <div className="text-xs text-gray-500 mt-1">打卡天数</div>
           </div>
           <div>
-            <div className="text-xl font-bold text-gray-800">12</div>
+            <div className="text-xl font-bold text-gray-800">{stats.badgesCount}</div>
             <div className="text-xs text-gray-500 mt-1">我的徽章</div>
           </div>
           <div>
-            <div className="text-xl font-bold text-yellow-500">1,450</div>
+            <div className="text-xl font-bold text-yellow-500">{stats.totalPoints.toLocaleString()}</div>
             <div className="text-xs text-gray-500 mt-1">积分余额</div>
           </div>
         </div>
