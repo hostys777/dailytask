@@ -132,6 +132,42 @@ export default function App() {
     }
   };
 
+  const deleteTasks = async (ids: number[]) => {
+    if (!session?.user?.id || ids.length === 0) return;
+
+    // Optimistic update
+    setTasks((prevTasks) => prevTasks.filter(t => !ids.includes(t.id)));
+
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .in('id', ids);
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting tasks:', error);
+      if (session?.user?.id) fetchTasks(session.user.id);
+    }
+  };
+
+  const completeTasks = async (ids: number[]) => {
+    if (!session?.user?.id || ids.length === 0) return;
+
+    // Optimistic update
+    setTasks((prevTasks) => prevTasks.map(t => ids.includes(t.id) ? { ...t, completed: true } : t));
+
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update({ completed: true })
+        .in('id', ids);
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error completing tasks:', error);
+      if (session?.user?.id) fetchTasks(session.user.id);
+    }
+  };
+
   // Pages that don't need BottomNav
   if (activeTab === 'login' || activeTab === 'register') {
     return (
@@ -153,7 +189,7 @@ export default function App() {
     <div className="w-full max-w-md mx-auto bg-gray-50 min-h-screen font-sans shadow-lg overflow-hidden flex flex-col relative">
       {/* Current Page Content */}
       {activeTab === 'home' && <HomeFeed tasks={tasks} toggleTask={toggleTask} onNavigate={setActiveTab} />}
-      {activeTab === 'tasks' && <Tasks tasks={tasks} toggleTask={toggleTask} />}
+      {activeTab === 'tasks' && <Tasks tasks={tasks} toggleTask={toggleTask} deleteTasks={deleteTasks} completeTasks={completeTasks} />}
       {activeTab === 'stats' && <Statistics />}
       {activeTab === 'profile' && <Profile onNavigate={setActiveTab} />}
 
