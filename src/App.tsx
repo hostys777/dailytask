@@ -15,6 +15,7 @@ export interface Task {
   category: string;
   points: number;
   completed: boolean;
+  created_at?: string;
 }
 
 export default function App() {
@@ -190,7 +191,7 @@ export default function App() {
       {/* Current Page Content */}
       {activeTab === 'home' && <HomeFeed tasks={tasks} toggleTask={toggleTask} onNavigate={setActiveTab} />}
       {activeTab === 'tasks' && <Tasks tasks={tasks} toggleTask={toggleTask} deleteTasks={deleteTasks} completeTasks={completeTasks} />}
-      {activeTab === 'stats' && <Statistics />}
+      {activeTab === 'stats' && <Statistics tasks={tasks} />}
       {activeTab === 'profile' && <Profile onNavigate={setActiveTab} />}
 
       {/* Bottom Nav */}
