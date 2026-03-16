@@ -246,7 +246,7 @@ export function AddTask({ onBack, onAdd }: AddTaskProps) {
                   className={`flex-shrink-0 w-14 h-14 flex items-center justify-center rounded-blob cursor-pointer transition-all border-2 border-foreground ${
                     isSelected 
                     ? 'bg-tertiary text-foreground shadow-[2px_2px_0_0_#1E293B] -translate-y-1' 
-                    : 'bg-muted/10 text-muted hover:bg-muted/20'
+                    : 'bg-muted/10 text-slate-400 hover:bg-muted/20'
                   }`}
                 >
                   <i className={`${iconClass} text-2xl`}></i>
@@ -269,7 +269,7 @@ export function AddTask({ onBack, onAdd }: AddTaskProps) {
                   className={`px-4 py-2 rounded-full text-xs font-bold font-heading uppercase tracking-wide border-2 border-foreground transition-all ${
                     isSelected
                     ? 'bg-primary text-foreground shadow-[2px_2px_0_0_#1E293B] -translate-y-0.5'
-                    : 'bg-white text-muted hover:bg-quaternary'
+                    : 'bg-white text-slate-500 hover:bg-quaternary'
                   }`}
                 >
                   {cat}
@@ -281,7 +281,7 @@ export function AddTask({ onBack, onAdd }: AddTaskProps) {
               className={`px-4 py-2 rounded-full text-xs font-bold font-heading uppercase tracking-wide border-2 border-foreground transition-all flex items-center ${
                 category === '自定义'
                 ? 'bg-primary text-foreground shadow-[2px_2px_0_0_#1E293B] -translate-y-0.5'
-                : 'bg-white text-muted hover:bg-quaternary'
+                : 'bg-white text-slate-500 hover:bg-quaternary'
               }`}
             >
               + 自定义
@@ -358,7 +358,7 @@ export function AddTask({ onBack, onAdd }: AddTaskProps) {
 
         {/* 2.7 任务描述 */}
         <div className="card-sticker bg-white p-4">
-          <h2 className="text-sm font-bold font-heading text-foreground mb-3 uppercase tracking-wide">任务描述 <span className="text-muted font-normal text-xs">(选填)</span></h2>
+          <h2 className="text-sm font-bold font-heading text-foreground mb-3 uppercase tracking-wide">任务描述 <span className="text-slate-400 font-normal text-xs">(选填)</span></h2>
           <textarea
             className="w-full border-2 border-foreground rounded-xl p-4 text-sm font-bold focus:outline-none focus:shadow-[4px_4px_0_0_#1E293B] transition-shadow resize-none bg-background"
             rows={3}
@@ -367,13 +367,13 @@ export function AddTask({ onBack, onAdd }: AddTaskProps) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           ></textarea>
-          <div className="text-right text-[10px] font-bold text-muted mt-2">{description.length}/200</div>
+          <div className="text-right text-[10px] font-bold text-slate-400 mt-2">{description.length}/200</div>
         </div>
 
         {/* 2.8 目标设置 */}
         <div className="card-sticker bg-white p-4">
           <div className="flex justify-between items-center mb-1">
-            <h2 className="text-sm font-bold font-heading text-foreground uppercase tracking-wide">配置目标 <span className="text-muted font-normal text-xs">(选填)</span></h2>
+            <h2 className="text-sm font-bold font-heading text-foreground uppercase tracking-wide">配置目标 <span className="text-slate-400 font-normal text-xs">(选填)</span></h2>
             <div 
               className={`w-12 h-7 flex items-center rounded-full p-1 cursor-pointer transition-colors border-2 border-foreground ${enableGoal ? 'bg-primary' : 'bg-muted'}`}
               onClick={() => setEnableGoal(!enableGoal)}
@@ -437,7 +437,7 @@ export function AddTask({ onBack, onAdd }: AddTaskProps) {
         <div className="fixed inset-0 min-h-screen bg-foreground/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="card-sticker bg-white p-6 w-full max-w-sm">
             <h3 className="text-xl font-bold font-heading text-foreground mb-4">放弃编辑？</h3>
-            <p className="text-sm font-bold text-muted mb-8">当前有未保存的内容，退出将丢失这些修改。</p>
+            <p className="text-sm font-bold text-slate-500 mb-8">当前有未保存的内容，退出将丢失这些修改。</p>
             <div className="flex gap-4">
               <button 
                 onClick={() => setShowConfirmExit(false)}
@@ -458,7 +458,7 @@ export function AddTask({ onBack, onAdd }: AddTaskProps) {
 
       {/* 创建成功 Toast */}
       {isToastVisible && (
-        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 card-sticker bg-foreground text-white px-6 py-4 z-50 flex flex-col items-center gap-3 max-w-[200px] w-full animate-in fade-in zoom-in duration-200">
+        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 card-sticker bg-white text-foreground px-6 py-4 z-50 flex flex-col items-center gap-3 max-w-[200px] w-full animate-in fade-in zoom-in duration-200">
           <i className="ri-checkbox-circle-fill text-4xl text-primary drop-shadow-[2px_2px_0_rgba(0,0,0,1)]"></i>
           <span className="font-bold font-heading text-base tracking-widest">创建成功</span>
         </div>
