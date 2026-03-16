@@ -9,12 +9,22 @@ import { AddTask } from './components/AddTask';
 import { AuthPage } from './components/AuthPage';
 import { supabase } from './lib/supabase';
 
+export interface SubTask {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
 export interface Task {
   id: number;
   title: string;
   category: string;
   points: number;
   completed: boolean;
+  type?: 'normal' | 'progress'; 
+  current_progress?: number;
+  target_progress?: number;
+  subtasks?: SubTask[];
   created_at?: string;
 }
 
@@ -103,7 +113,7 @@ export default function App() {
     }
   };
 
-  const addTask = async (newTask: { title: string; category: string; points: number; [key: string]: any }) => {
+  const addTask = async (newTask: { title: string; category: string; points: number; type?: 'normal' | 'progress'; current_progress?: number; target_progress?: number; subtasks?: SubTask[]; [key: string]: any }) => {
     if (!session?.user?.id) {
       console.warn('Cannot add task: User is not logged in.');
       return;
@@ -114,7 +124,11 @@ export default function App() {
       category: newTask.category, 
       points: newTask.points, 
       completed: false,
-      user_id: session.user.id
+      user_id: session.user.id,
+      type: newTask.type || 'normal',
+      current_progress: newTask.current_progress || 0,
+      target_progress: newTask.target_progress || 1,
+      subtasks: newTask.subtasks || null
     };
     
     console.log('Sending new task to Supabase:', taskPayload);
@@ -147,6 +161,41 @@ export default function App() {
       if (error) throw error;
     } catch (error) {
       console.error('Error deleting tasks:', error);
+      if (session?.user?.id) fetchTasks(session.user.id);
+    }
+  };
+
+  const updateTaskProgress = async (id: number, current_progress: number, subtasks?: SubTask[]) => {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+
+    let isCompleted = task.completed;
+    if (task.target_progress && current_progress >= task.target_progress) {
+      isCompleted = true;
+    }
+
+    // Optimistic update
+    setTasks(tasks.map(t => t.id === id ? { 
+      ...t, 
+      current_progress, 
+      subtasks: subtasks || t.subtasks,
+      completed: isCompleted 
+    } : t));
+
+    // Update in Supabase
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update({ 
+          current_progress, 
+          subtasks: subtasks || null,
+          completed: isCompleted 
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating progress:', error);
       if (session?.user?.id) fetchTasks(session.user.id);
     }
   };
@@ -189,8 +238,8 @@ export default function App() {
   return (
     <div className="w-full max-w-md mx-auto bg-background text-foreground min-h-screen shadow-xl overflow-hidden flex flex-col relative">
       {/* Current Page Content */}
-      {activeTab === 'home' && <HomeFeed tasks={tasks} toggleTask={toggleTask} onNavigate={setActiveTab} />}
-      {activeTab === 'tasks' && <Tasks tasks={tasks} toggleTask={toggleTask} deleteTasks={deleteTasks} completeTasks={completeTasks} />}
+      {activeTab === 'home' && <HomeFeed tasks={tasks} toggleTask={toggleTask} onNavigate={setActiveTab} updateTaskProgress={updateTaskProgress} />}
+      {activeTab === 'tasks' && <Tasks tasks={tasks} toggleTask={toggleTask} deleteTasks={deleteTasks} completeTasks={completeTasks} updateTaskProgress={updateTaskProgress} />}
       {activeTab === 'stats' && <Statistics tasks={tasks} />}
       {activeTab === 'profile' && <Profile onNavigate={setActiveTab} tasks={tasks} />}
 

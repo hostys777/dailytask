@@ -1,25 +1,27 @@
-import { User, Plus, CheckCircle2, Award, ChevronLeft, ChevronRight } from 'lucide-react';
+import { User, Plus, CheckCircle2, Award, ChevronLeft, ChevronRight, ChevronRight as ChevronRightIcon, CheckSquare } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import type { Task } from '../App';
+import type { Task, SubTask } from '../App';
 
 interface HomeProps {
   tasks: Task[];
   toggleTask: (id: number) => void;
   onNavigate: (page: string) => void;
+  updateTaskProgress?: (id: number, current_progress: number, subtasks?: SubTask[]) => void;
 }
 
-export function HomeFeed({ tasks, toggleTask, onNavigate }: HomeProps) {
+export function HomeFeed({ tasks, toggleTask, onNavigate, updateTaskProgress }: HomeProps) {
   // Navigation for month view
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
 
   const { todayTasks, stats, calendarDays } = useMemo(() => {
-    // Top 3 tasks for today
+    // Top 3 tasks for today that are NOT completed
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    const todayTasks = tasks.filter(t => t.created_at && t.created_at.startsWith(todayStr)).slice(0, 3);
+    const todayTasks = tasks.filter(t => t.created_at && t.created_at.startsWith(todayStr) && !t.completed).slice(0, 3);
 
-    // If no tasks today, fallback so it's not totally empty (optional)
-    const displayTasks = todayTasks.length > 0 ? todayTasks : tasks.slice(0, 3);
+    // If no uncompleted tasks today, fallback so it's not totally empty (optional)
+    const displayTasks = todayTasks.length > 0 ? todayTasks : tasks.filter(t => !t.completed).slice(0, 3);
     
     // Monthly statistics
     const currentMonthTasks = tasks.filter(t => {
@@ -178,28 +180,114 @@ export function HomeFeed({ tasks, toggleTask, onNavigate }: HomeProps) {
         </div>
         
         <div className="space-y-4 relative">
-          {todayTasks.map(task => (
-            <div 
-              key={task.id} 
-              className="card-sticker p-4 flex items-center cursor-pointer hover:-rotate-1 hover:scale-[1.02] transition-all bg-card"
-              onClick={() => toggleTask(task.id)}
-            >
-              {task.completed ? (
-                <div className="w-6 h-6 rounded-full bg-quaternary border-2 border-foreground flex items-center justify-center flex-shrink-0 shadow-[2px_2px_0_0_#1E293B]">
-                  <CheckCircle2 size={16} className="text-foreground" />
+          {todayTasks.map(task => {
+            const isExpanded = expandedTaskId === task.id;
+            return (
+            <div key={task.id} className="relative">
+              <div 
+                className="card-sticker p-4 cursor-pointer hover:-rotate-1 hover:scale-[1.02] transition-all bg-card"
+                onClick={() => {
+                  if (task.type === 'progress') {
+                    setExpandedTaskId(isExpanded ? null : task.id);
+                  } else {
+                    toggleTask(task.id);
+                  }
+                }}
+              >
+                <div className="flex items-center">
+                  {task.type === 'progress' ? (
+                    <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 transition-transform">
+                       <ChevronRightIcon size={20} className={`transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} />
+                    </div>
+                  ) : (
+                    task.completed ? (
+                      <div className="w-6 h-6 rounded-full bg-quaternary border-2 border-foreground flex items-center justify-center flex-shrink-0 shadow-[2px_2px_0_0_#1E293B]">
+                        <CheckCircle2 size={16} className="text-foreground" />
+                      </div>
+                    ) : (
+                      <div className="w-6 h-6 rounded-full border-2 border-foreground flex-shrink-0 bg-white shadow-[2px_2px_0_0_#1E293B]" />
+                    )
+                  )}
+                  <div className="ml-3 flex-1">
+                    <div className={`font-bold text-lg transition-all ${task.completed ? 'text-muted-foreground line-through decoration-2 opacity-70' : 'text-foreground'}`}>
+                      {task.title}
+                    </div>
+                    <div className="text-xs font-bold text-muted-foreground mt-0.5">{task.category}</div>
+                  </div>
+                  {task.type === 'progress' && !task.completed && (
+                    <div className="mr-3 text-xs font-bold font-heading text-secondary shrink-0 flex flex-col items-end">
+                      {task.subtasks ? (
+                        <span>{task.current_progress || 0}/{task.target_progress || 1}</span>
+                      ) : (
+                        <span>{task.current_progress || 0}/{task.target_progress || 100}</span>
+                      )}
+                    </div>
+                  )}
+                  <div className="text-sm font-bold bg-tertiary px-2 py-1 rounded-md border-2 border-foreground shadow-[2px_2px_0_0_#1E293B]">+{task.points} 积分</div>
                 </div>
-              ) : (
-                <div className="w-6 h-6 rounded-full border-2 border-foreground flex-shrink-0 bg-white shadow-[2px_2px_0_0_#1E293B]" />
-              )}
-              <div className="ml-3 flex-1">
-                <div className={`font-bold text-lg transition-all ${task.completed ? 'text-muted-foreground line-through decoration-2 opacity-70' : 'text-foreground'}`}>
-                  {task.title}
-                </div>
-                <div className="text-xs font-bold text-muted-foreground mt-0.5">{task.category}</div>
+
+                {/* Progress bar line */}
+                {task.type === 'progress' && !task.completed && (
+                  <div className="mt-3">
+                    <div className="w-full h-2.5 bg-muted rounded-full border-2 border-foreground overflow-hidden">
+                      <div 
+                        className="h-full bg-secondary transition-all" 
+                        style={{ width: `${Math.min(100, ((task.current_progress || 0) / (task.target_progress || 1)) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="text-sm font-bold bg-tertiary px-2 py-1 rounded-md border-2 border-foreground shadow-[2px_2px_0_0_#1E293B]">+{task.points} 积分</div>
+
+              {/* Expanded Area for Progress Task */}
+              {task.type === 'progress' && !task.completed && isExpanded && (
+                <div className="mt-2 bg-white border-2 border-foreground rounded-xl p-3 shadow-[4px_4px_0_0_#1E293B] relative -top-3 z-0 pt-5 mx-2 animate-in slide-in-from-top-2">
+                   {task.subtasks ? (
+                     <div className="space-y-2">
+                       {task.subtasks.map((st, i) => (
+                         <div 
+                           key={st.id} 
+                           className="flex items-center gap-3 p-2 hover:bg-muted rounded-lg cursor-pointer"
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             if (st.completed) return;
+                             
+                             const newSubtasks = [...task.subtasks!];
+                             newSubtasks[i].completed = !newSubtasks[i].completed;
+                             const current = newSubtasks.filter(s => s.completed).length;
+                             updateTaskProgress?.(task.id, current, newSubtasks);
+                           }}
+                         >
+                           {st.completed ? (
+                             <CheckSquare size={18} className="text-secondary" />
+                           ) : (
+                             <div className="w-[18px] h-[18px] border-2 border-foreground rounded" />
+                           )}
+                           <span className={`text-sm font-bold ${st.completed ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+                             {st.title}
+                           </span>
+                         </div>
+                       ))}
+                     </div>
+                   ) : (
+                     <div className="flex justify-between items-center px-2">
+                       <span className="text-sm font-bold text-muted-foreground">当前进度</span>
+                       <button 
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           updateTaskProgress?.(task.id, (task.current_progress || 0) + 1);
+                         }}
+                         className="px-4 py-1.5 bg-quaternary border-2 border-foreground rounded-full text-foreground shadow-[2px_2px_0_0_#1E293B] font-bold active:translate-y-0.5 active:shadow-none transition-all"
+                       >
+                         +1 进度
+                       </button>
+                     </div>
+                   )}
+                </div>
+              )}
             </div>
-          ))}
+            );
+          })}
 
           {/* Add Task Button */}
           <button 

@@ -7,6 +7,10 @@ CREATE TABLE tasks (
   category TEXT NOT NULL,
   points INTEGER NOT NULL DEFAULT 0,
   completed BOOLEAN NOT NULL DEFAULT false,
+  type TEXT DEFAULT 'normal',
+  current_progress INTEGER DEFAULT 0,
+  target_progress INTEGER DEFAULT 1,
+  subtasks JSONB,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

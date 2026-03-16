@@ -1,28 +1,23 @@
 import { useState } from 'react';
-import { Search, CheckCircle2, CheckSquare, Trash2, X, CheckSquare2 } from 'lucide-react';
-
-interface Task {
-  id: number;
-  title: string;
-  category: string;
-  points: number;
-  completed: boolean;
-}
+import { Search, CheckCircle2, CheckSquare, Trash2, X, ChevronRight } from 'lucide-react';
+import type { Task, SubTask } from '../App';
 
 interface TasksProps {
   tasks: Task[];
   toggleTask: (id: number) => void;
   deleteTasks?: (ids: number[]) => Promise<void>;
   completeTasks?: (ids: number[]) => Promise<void>;
+  updateTaskProgress?: (id: number, current_progress: number, subtasks?: SubTask[]) => void;
 }
 
-export function Tasks({ tasks, toggleTask, deleteTasks, completeTasks }: TasksProps) {
+export function Tasks({ tasks, toggleTask, deleteTasks, completeTasks, updateTaskProgress }: TasksProps) {
   const [activeCategory, setActiveCategory] = useState('全部');
   const [searchQuery, setSearchQuery] = useState('');
   
   // Batch management states
   const [isBatchMode, setIsBatchMode] = useState(false);
   const [selectedTaskIds, setSelectedTaskIds] = useState<number[]>([]);
+  const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
 
   const categories = ['全部', '健康生活', '自我提升', '运动健身', '其他'];
 
@@ -32,15 +27,19 @@ export function Tasks({ tasks, toggleTask, deleteTasks, completeTasks }: TasksPr
     return matchesCategory && matchesSearch;
   });
 
-  const handleTaskClick = (id: number) => {
+  const handleTaskClick = (task: Task) => {
     if (isBatchMode) {
       // Toggle selection
       setSelectedTaskIds(prev => 
-        prev.includes(id) ? prev.filter(tid => tid !== id) : [...prev, id]
+        prev.includes(task.id) ? prev.filter(tid => tid !== task.id) : [...prev, task.id]
       );
     } else {
-      // Normal toggle
-      toggleTask(id);
+      if (task.type === 'progress') {
+        setExpandedTaskId(expandedTaskId === task.id ? null : task.id);
+      } else {
+        // Normal toggle
+        toggleTask(task.id);
+      }
     }
   };
 
@@ -140,41 +139,121 @@ export function Tasks({ tasks, toggleTask, deleteTasks, completeTasks }: TasksPr
           {filteredTasks.length > 0 ? (
             filteredTasks.map(task => {
               const isSelected = selectedTaskIds.includes(task.id);
+              const isExpanded = expandedTaskId === task.id;
+              
               return (
-                <div
-                  key={task.id}
-                  className={`card-sticker p-4 flex items-center cursor-pointer transition-all hover:-rotate-1 hover:scale-[1.02] ${
-                    isSelected ? 'border-accent shadow-[6px_6px_0_0_var(--color-accent)] -translate-y-1' : ''
-                  }`}
-                  onClick={() => handleTaskClick(task.id)}
-                >
-                  {isBatchMode ? (
-                    <div className="mr-3">
-                      {isSelected ? (
-                        <div className="w-6 h-6 bg-accent border-2 border-foreground flex items-center justify-center rounded shadow-[2px_2px_0_0_#1E293B]">
-                          <CheckSquare className="text-white" size={16} strokeWidth={3} />
+                <div key={task.id} className="relative">
+                  <div
+                    className={`card-sticker p-4 cursor-pointer transition-all hover:-rotate-1 hover:scale-[1.02] ${
+                      isSelected ? 'border-accent shadow-[6px_6px_0_0_var(--color-accent)] -translate-y-1' : ''
+                    }`}
+                    onClick={() => handleTaskClick(task)}
+                  >
+                    <div className="flex items-center">
+                      {isBatchMode ? (
+                        <div className="mr-3">
+                          {isSelected ? (
+                            <div className="w-6 h-6 bg-accent border-2 border-foreground flex items-center justify-center rounded shadow-[2px_2px_0_0_#1E293B]">
+                              <CheckSquare className="text-white" size={16} strokeWidth={3} />
+                            </div>
+                          ) : (
+                            <div className="w-6 h-6 border-2 border-foreground rounded bg-white shadow-[2px_2px_0_0_#1E293B]" />
+                          )}
                         </div>
                       ) : (
-                        <div className="w-6 h-6 border-2 border-foreground rounded bg-white shadow-[2px_2px_0_0_#1E293B]" />
+                        task.type === 'progress' ? (
+                          <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 transition-transform">
+                             <ChevronRight size={20} className={`transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} />
+                          </div>
+                        ) : (
+                          task.completed ? (
+                            <div className="w-6 h-6 rounded-full bg-quaternary border-2 border-foreground flex items-center justify-center flex-shrink-0 shadow-[2px_2px_0_0_#1E293B]">
+                              <CheckCircle2 size={16} className="text-foreground" />
+                            </div>
+                          ) : (
+                            <div className="w-6 h-6 rounded-full border-2 border-foreground flex-shrink-0 bg-white shadow-[2px_2px_0_0_#1E293B]" />
+                          )
+                        )
                       )}
-                    </div>
-                  ) : (
-                    task.completed ? (
-                      <div className="w-6 h-6 rounded-full bg-quaternary border-2 border-foreground flex items-center justify-center flex-shrink-0 shadow-[2px_2px_0_0_#1E293B]">
-                        <CheckCircle2 size={16} className="text-foreground" />
+                      
+                      <div className={`ml-1 flex-1 ${isBatchMode ? '' : 'ml-3'}`}>
+                        <div className={`font-bold text-lg transition-all ${task.completed ? 'text-muted-foreground line-through decoration-2 opacity-70' : 'text-foreground'}`}>
+                          {task.title}
+                        </div>
+                        <div className="text-xs font-bold text-muted-foreground mt-0.5">{task.category}</div>
                       </div>
-                    ) : (
-                      <div className="w-6 h-6 rounded-full border-2 border-foreground flex-shrink-0 bg-white shadow-[2px_2px_0_0_#1E293B]" />
-                    )
-                  )}
-                  
-                  <div className={`ml-1 flex-1 ${isBatchMode ? '' : 'ml-3'}`}>
-                    <div className={`font-bold text-lg transition-all ${task.completed ? 'text-muted-foreground line-through decoration-2 opacity-70' : 'text-foreground'}`}>
-                      {task.title}
+
+                      {task.type === 'progress' && !task.completed && (
+                        <div className="mr-3 text-xs font-bold font-heading text-secondary shrink-0 flex flex-col items-end">
+                          {task.subtasks ? (
+                            <span>{task.current_progress || 0}/{task.target_progress || 1}</span>
+                          ) : (
+                            <span>{task.current_progress || 0}/{task.target_progress || 100}</span>
+                          )}
+                        </div>
+                      )}
+                      <div className="text-sm font-bold bg-tertiary px-2 py-1 rounded-md border-2 border-foreground shadow-[2px_2px_0_0_#1E293B]">+{task.points} 积分</div>
                     </div>
-                    <div className="text-xs font-bold text-muted-foreground mt-0.5">{task.category}</div>
+                    
+                    {/* Render Progress Logic Inside Card */}
+                    {task.type === 'progress' && !task.completed && (
+                       <div className="mt-3">
+                         <div className="w-full h-3 bg-muted rounded-full border-2 border-foreground overflow-hidden">
+                           <div 
+                             className="h-full bg-secondary transition-all" 
+                             style={{ width: `${Math.min(100, ((task.current_progress || 0) / (task.target_progress || 1)) * 100)}%` }}
+                           />
+                         </div>
+                       </div>
+                    )}
                   </div>
-                  <div className="text-sm font-bold bg-tertiary px-2 py-1 rounded-md border-2 border-foreground shadow-[2px_2px_0_0_#1E293B]">+{task.points} 积分</div>
+                  
+                  {/* Expanded Subtasks / Quick Add */}
+                  {task.type === 'progress' && !task.completed && isExpanded && !isBatchMode && (
+                    <div className="mt-2 bg-white border-2 border-foreground rounded-xl p-3 shadow-[4px_4px_0_0_#1E293B] relative -top-3 z-0 pt-5 mx-2 animate-in slide-in-from-top-2">
+                       {task.subtasks ? (
+                         <div className="space-y-2">
+                           {task.subtasks.map((st, i) => (
+                             <div 
+                               key={st.id} 
+                               className="flex items-center gap-3 p-2 hover:bg-muted rounded-lg cursor-pointer"
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 if (st.completed) return;
+                                 
+                                 const newSubtasks = [...task.subtasks!];
+                                 newSubtasks[i].completed = !newSubtasks[i].completed;
+                                 const current = newSubtasks.filter(s => s.completed).length;
+                                 updateTaskProgress?.(task.id, current, newSubtasks);
+                               }}
+                             >
+                               {st.completed ? (
+                                 <CheckSquare size={18} className="text-secondary" />
+                               ) : (
+                                 <div className="w-[18px] h-[18px] border-2 border-foreground rounded" />
+                               )}
+                               <span className={`text-sm font-bold ${st.completed ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+                                 {st.title}
+                               </span>
+                             </div>
+                           ))}
+                         </div>
+                       ) : (
+                         <div className="flex justify-between items-center px-2">
+                           <span className="text-sm font-bold text-muted-foreground">当前进度</span>
+                           <button 
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               updateTaskProgress?.(task.id, (task.current_progress || 0) + 1);
+                             }}
+                             className="px-4 py-1.5 bg-quaternary border-2 border-foreground rounded-full text-foreground shadow-[2px_2px_0_0_#1E293B] font-bold active:translate-y-0.5 active:shadow-none transition-all"
+                           >
+                             +1 进度
+                           </button>
+                         </div>
+                       )}
+                    </div>
+                  )}
                 </div>
               );
             })
@@ -201,7 +280,7 @@ export function Tasks({ tasks, toggleTask, deleteTasks, completeTasks }: TasksPr
                 className="p-2 rounded-lg bg-quaternary text-foreground border-2 border-foreground shadow-[2px_2px_0_0_#1E293B] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0_0_#1E293B] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0_0_#1E293B] disabled:opacity-50 disabled:shadow-none disabled:transform-none transition-all flex flex-col items-center gap-1"
                 title="标记为完成"
               >
-                <CheckSquare2 size={18} />
+                <CheckSquare size={18} />
               </button>
               <button 
                 onClick={handleDeleteSelected}

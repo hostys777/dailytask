@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Plus, Minus } from 'lucide-react';
+import { ArrowLeft, Plus, Minus, X } from 'lucide-react';
 import 'remixicon/fonts/remixicon.css';
 
 interface AddTaskProps {
@@ -22,6 +22,14 @@ const PRESET_CATEGORIES = ['日常习惯', '学习提升', '健康运动', '工�
 const REPEAT_CYCLES = ['每日', '每周', '每月', '自定义'];
 
 export function AddTask({ onBack, onAdd }: AddTaskProps) {
+  // Task Type
+  const [taskType, setTaskType] = useState<'normal' | 'progress'>('normal');
+  
+  // Progress Options
+  const [progressMode, setProgressMode] = useState<'number' | 'subtask'>('number');
+  const [targetNumber, setTargetNumber] = useState<number>(10);
+  const [subtasks, setSubtasks] = useState<{id: string, title: string, completed: boolean}[]>([{id: '1', title: '', completed: false}]);
+
   // 1. Form State
   const [title, setTitle] = useState('');
   const [titleError, setTitleError] = useState(false);
@@ -78,10 +86,22 @@ export function AddTask({ onBack, onAdd }: AddTaskProps) {
     }
 
     // Save Logic
+    const finalSubtasks = taskType === 'progress' && progressMode === 'subtask' 
+      ? subtasks.filter(st => st.title.trim() !== '') 
+      : null;
+      
+    const finalTargetProgress = taskType === 'progress' 
+      ? (progressMode === 'number' ? targetNumber : finalSubtasks?.length || 1)
+      : 1;
+
     onAdd({
       title,
       category: category === '自定义' ? customCategoryStr : category,
       points: 10, // Default passing to App
+      type: taskType,
+      current_progress: 0,
+      target_progress: finalTargetProgress,
+      subtasks: finalSubtasks,
       icon: selectedIcon,
       repeatCycle,
       reminderTime: enableReminder ? reminderTime : null,
@@ -112,6 +132,22 @@ export function AddTask({ onBack, onAdd }: AddTaskProps) {
 
       <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
         
+        {/* Task Type Switcher */}
+        <div className="flex bg-white border-2 border-foreground rounded-full p-1 shadow-[2px_2px_0_0_#1E293B] mb-2">
+          <button 
+            className={`flex-1 py-2 rounded-full text-sm font-bold font-heading transition-all ${taskType === 'normal' ? 'bg-primary border-2 border-foreground text-foreground shadow-[2px_2px_0_0_#1E293B]' : 'text-muted-foreground'}`}
+            onClick={() => setTaskType('normal')}
+          >
+            普通任务
+          </button>
+          <button 
+            className={`flex-1 py-2 rounded-full text-sm font-bold font-heading transition-all ${taskType === 'progress' ? 'bg-tertiary border-2 border-foreground text-foreground shadow-[2px_2px_0_0_#1E293B]' : 'text-muted-foreground'}`}
+            onClick={() => setTaskType('progress')}
+          >
+            进度任务
+          </button>
+        </div>
+
         {/* 2.2 任务名称 */}
         <div className="card-sticker bg-white p-4">
           <input
@@ -130,6 +166,73 @@ export function AddTask({ onBack, onAdd }: AddTaskProps) {
           {titleError && <p className="text-destructive font-bold text-xs mt-2 font-heading">名称不能为空</p>}
         </div>
 
+        {/* Progress Specific Settings */}
+        {taskType === 'progress' && (
+          <div className="card-sticker bg-white p-4">
+            <h2 className="text-sm font-bold font-heading text-foreground mb-3 uppercase tracking-wide">进度模式</h2>
+            <div className="flex gap-3 mb-4">
+               <button 
+                onClick={() => setProgressMode('number')}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-bold font-heading border-2 border-foreground transition-all ${progressMode === 'number' ? 'bg-secondary text-white shadow-[2px_2px_0_0_#1E293B] -translate-y-0.5' : 'bg-white text-foreground'}`}
+              >
+                数字指标
+              </button>
+              <button 
+                onClick={() => setProgressMode('subtask')}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-bold font-heading border-2 border-foreground transition-all ${progressMode === 'subtask' ? 'bg-quaternary text-foreground shadow-[2px_2px_0_0_#1E293B] -translate-y-0.5' : 'bg-white text-foreground'}`}
+              >
+                拆分子任务
+              </button>
+            </div>
+
+            {progressMode === 'number' && (
+              <div>
+                <label className="text-xs font-bold text-muted-foreground block mb-2">目标数值 (如: 10000 步)</label>
+                <input 
+                  type="number" 
+                  min="1"
+                  value={targetNumber}
+                  onChange={(e) => setTargetNumber(parseInt(e.target.value) || 1)}
+                  className="w-full border-2 border-foreground rounded-xl px-4 py-2 text-sm focus:outline-none focus:shadow-[2px_2px_0_0_#1E293B] font-bold bg-muted/10 transition-all font-heading"
+                />
+              </div>
+            )}
+
+            {progressMode === 'subtask' && (
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-muted-foreground block mb-2">子任务列表</label>
+                {subtasks.map((st, idx) => (
+                  <div key={st.id} className="flex items-center gap-2">
+                    <input 
+                      type="text" 
+                      placeholder={`子任务 ${idx + 1}`}
+                      value={st.title}
+                      onChange={(e) => {
+                        const newSub = [...subtasks];
+                        newSub[idx].title = e.target.value;
+                        setSubtasks(newSub);
+                      }}
+                      className="flex-1 border-2 border-foreground rounded-xl px-3 py-2 text-sm focus:outline-none focus:shadow-[2px_2px_0_0_#1E293B] font-bold bg-white transition-all font-body"
+                    />
+                    <button 
+                      onClick={() => setSubtasks(subtasks.filter(s => s.id !== st.id))}
+                      className="w-9 h-9 flex items-center justify-center bg-red-100 hover:bg-red-400 text-red-600 hover:text-white border-2 border-foreground rounded-xl transition-colors shadow-[2px_2px_0_0_#1E293B]"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ))}
+                <button 
+                  onClick={() => setSubtasks([...subtasks, {id: Date.now().toString(), title: '', completed: false}])}
+                  className="w-full mt-2 py-2 border-2 border-dashed border-foreground rounded-xl text-xs font-bold flex items-center justify-center gap-1 hover:bg-muted/30 transition-colors"
+                >
+                  <Plus size={14} /> 添加子任务
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* 2.3 任务图标选择 */}
         <div className="card-sticker bg-white p-4">
           <h2 className="text-sm font-bold font-heading text-foreground mb-3 uppercase tracking-wide">任务图标</h2>
@@ -143,7 +246,7 @@ export function AddTask({ onBack, onAdd }: AddTaskProps) {
                   className={`flex-shrink-0 w-14 h-14 flex items-center justify-center rounded-blob cursor-pointer transition-all border-2 border-foreground ${
                     isSelected 
                     ? 'bg-tertiary text-foreground shadow-[2px_2px_0_0_#1E293B] -translate-y-1' 
-                    : 'bg-muted/10 text-muted-foregroundhover:bg-muted/20'
+                    : 'bg-muted/10 text-muted hover:bg-muted/20'
                   }`}
                 >
                   <i className={`${iconClass} text-2xl`}></i>
@@ -166,7 +269,7 @@ export function AddTask({ onBack, onAdd }: AddTaskProps) {
                   className={`px-4 py-2 rounded-full text-xs font-bold font-heading uppercase tracking-wide border-2 border-foreground transition-all ${
                     isSelected
                     ? 'bg-primary text-foreground shadow-[2px_2px_0_0_#1E293B] -translate-y-0.5'
-                    : 'bg-white text-muted-foregroundhover:bg-quaternary'
+                    : 'bg-white text-muted hover:bg-quaternary'
                   }`}
                 >
                   {cat}
@@ -178,7 +281,7 @@ export function AddTask({ onBack, onAdd }: AddTaskProps) {
               className={`px-4 py-2 rounded-full text-xs font-bold font-heading uppercase tracking-wide border-2 border-foreground transition-all flex items-center ${
                 category === '自定义'
                 ? 'bg-primary text-foreground shadow-[2px_2px_0_0_#1E293B] -translate-y-0.5'
-                : 'bg-white text-muted-foregroundhover:bg-quaternary'
+                : 'bg-white text-muted hover:bg-quaternary'
               }`}
             >
               + 自定义
@@ -255,7 +358,7 @@ export function AddTask({ onBack, onAdd }: AddTaskProps) {
 
         {/* 2.7 任务描述 */}
         <div className="card-sticker bg-white p-4">
-          <h2 className="text-sm font-bold font-heading text-foreground mb-3 uppercase tracking-wide">任务描述 <span className="text-muted-foregroundfont-normal text-xs">(选填)</span></h2>
+          <h2 className="text-sm font-bold font-heading text-foreground mb-3 uppercase tracking-wide">任务描述 <span className="text-muted font-normal text-xs">(选填)</span></h2>
           <textarea
             className="w-full border-2 border-foreground rounded-xl p-4 text-sm font-bold focus:outline-none focus:shadow-[4px_4px_0_0_#1E293B] transition-shadow resize-none bg-background"
             rows={3}
@@ -264,13 +367,13 @@ export function AddTask({ onBack, onAdd }: AddTaskProps) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           ></textarea>
-          <div className="text-right text-[10px] font-bold text-muted-foregroundmt-2">{description.length}/200</div>
+          <div className="text-right text-[10px] font-bold text-muted mt-2">{description.length}/200</div>
         </div>
 
         {/* 2.8 目标设置 */}
         <div className="card-sticker bg-white p-4">
           <div className="flex justify-between items-center mb-1">
-            <h2 className="text-sm font-bold font-heading text-foreground uppercase tracking-wide">配置目标 <span className="text-muted-foregroundfont-normal text-xs">(选填)</span></h2>
+            <h2 className="text-sm font-bold font-heading text-foreground uppercase tracking-wide">配置目标 <span className="text-muted font-normal text-xs">(选填)</span></h2>
             <div 
               className={`w-12 h-7 flex items-center rounded-full p-1 cursor-pointer transition-colors border-2 border-foreground ${enableGoal ? 'bg-primary' : 'bg-muted'}`}
               onClick={() => setEnableGoal(!enableGoal)}
@@ -334,7 +437,7 @@ export function AddTask({ onBack, onAdd }: AddTaskProps) {
         <div className="fixed inset-0 min-h-screen bg-foreground/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="card-sticker bg-white p-6 w-full max-w-sm">
             <h3 className="text-xl font-bold font-heading text-foreground mb-4">放弃编辑？</h3>
-            <p className="text-sm font-bold text-muted-foregroundmb-8">当前有未保存的内容，退出将丢失这些修改。</p>
+            <p className="text-sm font-bold text-muted mb-8">当前有未保存的内容，退出将丢失这些修改。</p>
             <div className="flex gap-4">
               <button 
                 onClick={() => setShowConfirmExit(false)}
