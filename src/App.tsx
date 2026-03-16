@@ -172,7 +172,7 @@ export default function App() {
   // Pages that don't need BottomNav
   if (activeTab === 'login' || activeTab === 'register') {
     return (
-      <div className="w-full max-w-md mx-auto min-h-screen shadow-lg font-sans flex flex-col relative overflow-hidden">
+      <div className="w-full max-w-md mx-auto min-h-screen bg-background text-foreground shadow-xl flex flex-col relative overflow-hidden">
         <AuthPage isLogin={activeTab === 'login'} onNavigate={setActiveTab} />
       </div>
     );
@@ -180,14 +180,14 @@ export default function App() {
 
   if (activeTab === 'add') {
     return (
-      <div className="w-full max-w-md mx-auto min-h-screen shadow-lg font-sans flex flex-col relative overflow-hidden bg-gray-50">
+      <div className="w-full max-w-md mx-auto min-h-screen bg-background text-foreground shadow-xl flex flex-col relative overflow-hidden">
         <AddTask onBack={() => setActiveTab('home')} onAdd={addTask} />
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-md mx-auto bg-gray-50 min-h-screen font-sans shadow-lg overflow-hidden flex flex-col relative">
+    <div className="w-full max-w-md mx-auto bg-background text-foreground min-h-screen shadow-xl overflow-hidden flex flex-col relative">
       {/* Current Page Content */}
       {activeTab === 'home' && <HomeFeed tasks={tasks} toggleTask={toggleTask} onNavigate={setActiveTab} />}
       {activeTab === 'tasks' && <Tasks tasks={tasks} toggleTask={toggleTask} deleteTasks={deleteTasks} completeTasks={completeTasks} />}
@@ -195,34 +195,34 @@ export default function App() {
       {activeTab === 'profile' && <Profile onNavigate={setActiveTab} tasks={tasks} />}
 
       {/* Bottom Nav */}
-      <nav className="bg-white border-t border-gray-200 flex justify-around items-center absolute bottom-0 w-full z-10 pb-1 text-sm">
+      <nav className="bg-card border-t-2 border-foreground flex justify-around items-center absolute bottom-0 w-full z-10 pb-1 text-sm shadow-[0_-4px_0_0_#E2E8F0]">
         <button 
           onClick={() => setActiveTab('home')}
-          className={`flex flex-col items-center py-3 px-4 ${activeTab === 'home' ? 'text-primary drop-shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+          className={`flex flex-col items-center py-3 px-4 transition-transform active:scale-95 ${activeTab === 'home' ? 'text-accent' : 'text-slate-400 hover:text-slate-800'}`}
         >
           <Home size={24} />
-          <span className="text-[10px] mt-1 font-medium">首页</span>
+          <span className="text-[10px] mt-1 font-bold font-heading">首页</span>
         </button>
         <button 
           onClick={() => setActiveTab('tasks')}
-          className={`flex flex-col items-center py-3 px-4 ${activeTab === 'tasks' ? 'text-primary drop-shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+          className={`flex flex-col items-center py-3 px-4 transition-transform active:scale-95 ${activeTab === 'tasks' ? 'text-accent' : 'text-slate-400 hover:text-slate-800'}`}
         >
           <CheckSquare size={24} />
-          <span className="text-[10px] mt-1 font-medium">任务</span>
+          <span className="text-[10px] mt-1 font-bold font-heading">任务</span>
         </button>
         <button 
           onClick={() => setActiveTab('stats')}
-          className={`flex flex-col items-center py-3 px-4 ${activeTab === 'stats' ? 'text-primary drop-shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+          className={`flex flex-col items-center py-3 px-4 transition-transform active:scale-95 ${activeTab === 'stats' ? 'text-accent' : 'text-slate-400 hover:text-slate-800'}`}
         >
           <BarChart2 size={24} />
-          <span className="text-[10px] mt-1 font-medium">统计</span>
+          <span className="text-[10px] mt-1 font-bold font-heading">统计</span>
         </button>
         <button
           onClick={() => setActiveTab('profile')}
-          className={`flex flex-col items-center py-3 px-4 ${activeTab === 'profile' ? 'text-primary drop-shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+          className={`flex flex-col items-center py-3 px-4 transition-transform active:scale-95 ${activeTab === 'profile' ? 'text-accent' : 'text-slate-400 hover:text-slate-800'}`}
         >
           <UserIcon size={24} />
-          <span className="text-[10px] mt-1 font-medium">我的</span>
+          <span className="text-[10px] mt-1 font-bold font-heading">我的</span>
         </button>
       </nav>
     </div>

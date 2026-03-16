@@ -67,38 +67,45 @@ export function Profile({ onNavigate, tasks }: ProfileProps) {
     onNavigate('login');
   };
   return (
-    <div className="flex-1 overflow-y-auto pb-20 bg-gray-50">
-      <header className="px-4 py-4 bg-white sticky top-0 z-10 shadow-sm text-center">
-        <h1 className="text-xl font-bold">我的</h1>
+    <div className="flex-1 overflow-y-auto pb-20 bg-background relative pt-0">
+      <header className="px-4 py-4 bg-card sticky top-0 z-10 border-b-2 border-foreground shadow-[0_4px_0_0_var(--color-foreground)] flex justify-center items-center">
+        <h1 className="text-2xl font-bold font-heading">
+          我的
+        </h1>
       </header>
 
       {/* Personal Info Area */}
-      <div className="bg-white p-6 shadow-sm border-b border-gray-100 mb-4">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center border-2 border-primary/20">
-            <User size={32} className="text-primary" />
+      <div className="p-4 mt-4">
+        <div className="card-sticker bg-secondary/10 p-6 relative z-10 overflow-hidden text-foreground">
+          {/* Background decoration */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/20 rounded-full mix-blend-overlay -translate-y-1/2 translate-x-1/2"></div>
+          
+          <div className="flex items-center gap-4 relative z-10 pb-6 border-b-2 border-foreground/10 mb-6">
+            <div className="w-20 h-20 bg-tertiary rounded-blob flex items-center justify-center border-2 border-foreground shadow-[4px_4px_0_0_#1E293B]">
+              <User size={40} className="text-foreground" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-xl font-bold font-heading truncate">{userEmail}</h2>
+              <p className="text-sm font-bold opacity-90 mt-1 font-heading">ID: 88481234</p>
+            </div>
+            <button className="px-4 py-2 bg-card hover:bg-quaternary border-2 border-foreground text-sm font-bold rounded-full text-foreground shadow-[2px_2px_0_0_#1E293B] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0_0_#1E293B] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[0_0_0_0_#1E293B] transition-all">
+              编辑
+            </button>
           </div>
-          <div className="flex-1">
-            <h2 className="text-lg font-bold text-gray-800">{userEmail}</h2>
-            <p className="text-sm text-gray-500 mt-1">ID: 88481234</p>
-          </div>
-          <button className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-xs font-medium rounded-full text-gray-600 transition-colors">
-            编辑资料
-          </button>
-        </div>
 
-        <div className="grid grid-cols-3 gap-4 mt-6 text-center divide-x divide-gray-100">
-          <div>
-            <div className="text-xl font-bold text-gray-800">{stats.checkinDays}</div>
-            <div className="text-xs text-gray-500 mt-1">打卡天数</div>
-          </div>
-          <div>
-            <div className="text-xl font-bold text-gray-800">{stats.badgesCount}</div>
-            <div className="text-xs text-gray-500 mt-1">我的徽章</div>
-          </div>
-          <div>
-            <div className="text-xl font-bold text-yellow-500">{stats.totalPoints.toLocaleString()}</div>
-            <div className="text-xs text-gray-500 mt-1">积分余额</div>
+          <div className="grid grid-cols-3 gap-2 text-center relative z-10">
+            <div className="bg-card text-foreground rounded-xl p-3 border-2 border-foreground shadow-[4px_4px_0_0_#1E293B] hover:-rotate-2 transition-transform cursor-default">
+              <div className="text-2xl font-black font-heading">{stats.checkinDays}</div>
+              <div className="text-xs font-bold text-muted-foreground mt-1 tracking-wide">打卡天数</div>
+            </div>
+            <div className="bg-card text-foreground rounded-xl p-3 border-2 border-foreground shadow-[4px_4px_0_0_#1E293B] hover:scale-105 transition-transform cursor-default">
+              <div className="text-2xl font-black font-heading">{stats.badgesCount}</div>
+              <div className="text-xs font-bold text-muted-foreground mt-1 tracking-wide">我的徽章</div>
+            </div>
+            <div className="bg-card text-foreground rounded-xl p-3 border-2 border-foreground shadow-[4px_4px_0_0_#1E293B] hover:rotate-2 transition-transform cursor-default">
+              <div className="text-2xl font-black font-heading text-tertiary" style={{ textShadow: '1px 1px 0 #1E293B, -1px -1px 0 #1E293B, 1px -1px 0 #1E293B, -1px 1px 0 #1E293B' }}>{stats.totalPoints.toLocaleString()}</div>
+              <div className="text-xs font-bold text-muted-foreground mt-1 tracking-wide">积分余额</div>
+            </div>
           </div>
         </div>
       </div>

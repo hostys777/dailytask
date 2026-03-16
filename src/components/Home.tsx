@@ -1,5 +1,4 @@
-
-import { User, Plus, CheckCircle2, Circle, Award, ChevronLeft, ChevronRight } from 'lucide-react';
+import { User, Plus, CheckCircle2, Award, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { Task } from '../App';
 
@@ -126,33 +125,37 @@ export function HomeFeed({ tasks, toggleTask, onNavigate }: HomeProps) {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto pb-20">
+    <div className="flex-1 overflow-y-auto pb-20 relative bg-dot-grid">
       {/* Header */}
-      <header className="flex justify-between items-center px-4 py-4 bg-white sticky top-0 z-10 shadow-sm">
-        <div className="text-xl font-bold">每日任务</div>
+      <header className="flex justify-between items-center px-4 py-4 bg-background sticky top-0 z-10 border-b-2 border-foreground shadow-[0_4px_0_0_var(--color-foreground)]">
+        <div className="text-2xl font-bold font-heading flex items-center gap-2">
+          今日任务
+        </div>
         <div 
           onClick={() => onNavigate('profile')} 
-          className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-300 transition-colors"
+          className="w-10 h-10 bg-tertiary border-chunky rounded-full flex items-center justify-center cursor-pointer shadow-[4px_4px_0_0_#1E293B] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0_0_#1E293B] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0_0_#1E293B] transition-all group"
         >
-          <User size={18} className="text-gray-500" />
+          <User size={20} className="text-foreground group-hover:rotate-12 transition-transform" />
         </div>
       </header>
 
       {/* Consecutive Check-in Card */}
-      <div className="p-4">
-        <div className="bg-primary rounded-xl p-5 text-white shadow-md">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-lg font-semibold">连续打卡</h2>
-            <Award size={24} className="text-yellow-300" />
+      <div className="p-4 mt-2">
+        <div className="card-sticker p-5 card-sticker-interactive" style={{ backgroundColor: '#8B5CF6', color: 'white' }}>
+          <div className="flex justify-between items-start mb-2">
+            <h2 className="text-xl font-bold font-heading">连续打卡</h2>
+            <div className="w-10 h-10 bg-card rounded-full border-chunky flex items-center justify-center -mt-2 -mr-2 shadow-[2px_2px_0_0_#1E293B] rotate-12">
+              <Award size={20} className="text-tertiary" />
+            </div>
           </div>
           <div className="flex items-baseline mb-4">
-            <span className="text-4xl font-bold">{stats.currentStreak}</span>
-            <span className="ml-1 text-sm opacity-80">天</span>
+            <span className="text-5xl font-bold font-heading">{stats.currentStreak}</span>
+            <span className="ml-1 text-sm font-bold opacity-90">天</span>
           </div>
-          <div className="bg-white/20 rounded-full h-2 mb-2 overflow-hidden">
-            <div className="bg-white h-full rounded-full transition-all duration-1000" style={{ width: `${Math.min((stats.currentStreak / 21) * 100, 100)}%` }}></div>
+          <div className="bg-foreground rounded-full h-3 mb-2 overflow-hidden border-2 border-foreground relative">
+            <div className="bg-tertiary h-full rounded-full transition-all duration-1000 border-r-2 border-foreground" style={{ width: `${Math.max(Math.min((stats.currentStreak / 21) * 100, 100), 5)}%` }}></div>
           </div>
-          <div className="flex justify-between text-xs opacity-80">
+          <div className="flex justify-between text-xs font-bold opacity-90">
             <span>当前进度</span>
             <span>距离目标还差{Math.max(21 - stats.currentStreak, 0)}天</span>
           </div>
@@ -161,114 +164,129 @@ export function HomeFeed({ tasks, toggleTask, onNavigate }: HomeProps) {
 
       {/* Today's Tasks Area */}
       <div className="px-4 py-2">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-bold">今日任务</h3>
-          <span 
-            className="text-sm text-gray-500 cursor-pointer hover:text-primary transition-colors"
+        <div className="flex justify-between items-end mb-4">
+          <h3 className="text-xl font-bold font-heading relative z-10 w-fit">
+            <span className="relative z-10">今日任务</span>
+            <div className="absolute bottom-1 left-0 w-full h-3 bg-secondary/50 -z-10 -rotate-1 skew-x-12"></div>
+          </h3>
+          <button 
+            className="text-sm font-bold text-foreground hover:text-accent border-2 border-transparent hover:border-foreground rounded-full px-2 py-1 transition-all"
             onClick={() => onNavigate('tasks')}
           >
             全部 &gt;
-          </span>
+          </button>
         </div>
         
-        <div className="space-y-3">
+        <div className="space-y-4 relative">
           {todayTasks.map(task => (
             <div 
               key={task.id} 
-              className="bg-white rounded-lg p-4 flex items-center shadow-sm border border-gray-100 cursor-pointer transition-all hover:bg-gray-50"
+              className="card-sticker p-4 flex items-center cursor-pointer hover:-rotate-1 hover:scale-[1.02] transition-all bg-card"
               onClick={() => toggleTask(task.id)}
             >
               {task.completed ? (
-                <CheckCircle2 size={24} className="text-green-500 flex-shrink-0" />
+                <div className="w-6 h-6 rounded-full bg-quaternary border-2 border-foreground flex items-center justify-center flex-shrink-0 shadow-[2px_2px_0_0_#1E293B]">
+                  <CheckCircle2 size={16} className="text-foreground" />
+                </div>
               ) : (
-                <Circle size={24} className="text-gray-300 flex-shrink-0" />
+                <div className="w-6 h-6 rounded-full border-2 border-foreground flex-shrink-0 bg-white shadow-[2px_2px_0_0_#1E293B]" />
               )}
               <div className="ml-3 flex-1">
-                <div className={`font-medium transition-all ${task.completed ? 'text-gray-800 line-through opacity-70' : 'text-gray-800'}`}>
+                <div className={`font-bold text-lg transition-all ${task.completed ? 'text-muted-foreground line-through decoration-2 opacity-70' : 'text-foreground'}`}>
                   {task.title}
                 </div>
-                <div className="text-xs text-gray-400 mt-1">{task.category}</div>
+                <div className="text-xs font-bold text-muted-foreground mt-0.5">{task.category}</div>
               </div>
-              <div className="text-sm text-yellow-500 font-medium">+{task.points} 积分</div>
+              <div className="text-sm font-bold bg-tertiary px-2 py-1 rounded-md border-2 border-foreground shadow-[2px_2px_0_0_#1E293B]">+{task.points} 积分</div>
             </div>
           ))}
 
           {/* Add Task Button */}
           <button 
             onClick={() => onNavigate('add')}
-            className="w-full mt-4 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center text-gray-500 hover:bg-gray-50 hover:text-primary hover:border-primary/50 transition-colors flex flex-col items-center justify-center gap-1"
+            className="w-full mt-4 border-chunky border-dashed rounded-xl p-4 text-center text-foreground font-bold font-heading hover:bg-tertiary hover:border-solid transition-all flex flex-col items-center justify-center gap-1 hover:shadow-pop hover:translate-x-[-2px] hover:translate-y-[-2px]"
           >
-            <Plus size={24} className="opacity-60" />
-            <span className="text-sm font-medium">添加新任务</span>
+            <Plus size={28} />
+            <span className="text-base">添加新任务</span>
           </button>
         </div>
       </div>
 
       {/* Monthly Statistics Card */}
       <div className="p-4 mt-2 mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-bold">月度统计</h3>
-          <span 
-            className="text-sm text-gray-500 cursor-pointer hover:text-primary transition-colors"
+        <div className="flex justify-between items-end mb-4">
+          <h3 className="text-xl font-bold font-heading relative z-10 w-fit">
+            <span className="relative z-10">月度统计</span>
+            <div className="absolute bottom-1 left-0 w-full h-3 bg-quaternary/50 -z-10 -rotate-2 -skew-x-12"></div>
+          </h3>
+          <button 
+            className="text-sm font-bold text-foreground hover:text-accent border-2 border-transparent hover:border-foreground rounded-full px-2 py-1 transition-all"
             onClick={() => onNavigate('stats')}
           >
             详情 &gt;
-          </span>
+          </button>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        
+        <div className="card-sticker-pink p-4">
           <div className="flex justify-between items-center text-center mb-6 pt-2">
             <div>
-              <div className="text-2xl font-bold text-gray-800">{stats.completionRate}%</div>
-              <div className="text-xs text-gray-500 mt-1">完成率</div>
+              <div className="text-3xl font-black font-heading text-foreground">{stats.completionRate}%</div>
+              <div className="text-xs font-bold text-muted-foreground mt-1 uppercase tracking-wide">完成率</div>
             </div>
-            <div className="w-px h-10 bg-gray-200"></div>
+            <div className="w-0.5 h-12 bg-foreground rounded-full rotate-12 bg-opacity-20 border-l border-foreground"></div>
             <div>
-              <div className="text-2xl font-bold text-gray-800">{stats.checkinDays}</div>
-              <div className="text-xs text-gray-500 mt-1">本月打卡</div>
+              <div className="text-3xl font-black font-heading text-foreground">{stats.checkinDays}</div>
+              <div className="text-xs font-bold text-muted-foreground mt-1 uppercase tracking-wide">本月打卡</div>
             </div>
-            <div className="w-px h-10 bg-gray-200"></div>
+            <div className="w-0.5 h-12 bg-foreground rounded-full -rotate-12 bg-opacity-20 border-l border-foreground"></div>
             <div>
-              <div className="text-2xl font-bold text-yellow-500">{stats.monthlyPoints}</div>
-              <div className="text-xs text-gray-500 mt-1">获得积分</div>
+              <div className="text-3xl font-black font-heading text-tertiary" style={{ textShadow: '1px 1px 0 #1E293B, -1px -1px 0 #1E293B, 1px -1px 0 #1E293B, -1px 1px 0 #1E293B, 2px 2px 0 #1E293B' }}>{stats.monthlyPoints}</div>
+              <div className="text-xs font-bold text-muted-foreground mt-1 uppercase tracking-wide">获得积分</div>
             </div>
           </div>
 
           {/* Calendar */}
-          <div>
+          <div className="bg-white border-2 border-foreground rounded-lg p-3 shadow-[4px_4px_0_0_#1E293B]">
             <div className="flex justify-between items-center mb-4">
-              <span className="font-medium text-sm">{currentDate.getFullYear()}年{currentDate.getMonth() + 1}月</span>
+              <span className="font-bold text-base font-heading">{currentDate.getFullYear()}年{currentDate.getMonth() + 1}月</span>
               <div className="flex gap-2">
-                <ChevronLeft size={16} className="text-gray-400 cursor-pointer hover:text-gray-700" onClick={prevMonth} />
-                <ChevronRight size={16} className="text-gray-400 cursor-pointer hover:text-gray-700" onClick={nextMonth} />
+                <button className="w-7 h-7 flex items-center justify-center bg-muted border-2 border-foreground rounded-full hover:bg-secondary hover:text-white transition-colors" onClick={prevMonth}>
+                  <ChevronLeft size={16} />
+                </button>
+                <button className="w-7 h-7 flex items-center justify-center bg-muted border-2 border-foreground rounded-full hover:bg-secondary hover:text-white transition-colors" onClick={nextMonth}>
+                  <ChevronRight size={16} />
+                </button>
               </div>
             </div>
-            <div className="grid grid-cols-7 gap-1 text-center text-xs mb-2">
-              <div className="text-gray-400">日</div>
-              <div className="text-gray-400">一</div>
-              <div className="text-gray-400">二</div>
-              <div className="text-gray-400">三</div>
-              <div className="text-gray-400">四</div>
-              <div className="text-gray-400">五</div>
-              <div className="text-gray-400">六</div>
+            <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold mb-2">
+              <div className="text-muted-foreground">日</div>
+              <div className="text-muted-foreground">一</div>
+              <div className="text-muted-foreground">二</div>
+              <div className="text-muted-foreground">三</div>
+              <div className="text-muted-foreground">四</div>
+              <div className="text-muted-foreground">五</div>
+              <div className="text-muted-foreground">六</div>
             </div>
-            <div className="grid grid-cols-7 gap-1 text-center text-sm">
+            <div className="grid grid-cols-7 gap-1 text-center font-bold text-sm">
               {calendarDays.map((d, i) => {
-                let className = "p-1 m-0.5 rounded-full ";
+                let className = "py-1.5 w-full flex justify-center items-center rounded-blob border-2 border-transparent transition-all ";
                 if (!d.isCurrentMonth) {
-                  className += "opacity-40 text-gray-500";
+                  className += "opacity-40 text-muted-foreground";
                 } else if (d.isToday && d.isCompleted) {
-                  className += "bg-primary text-white font-bold shadow-sm";
+                  className += "bg-quaternary border-foreground text-foreground shadow-[2px_2px_0_0_#1E293B] scale-110 rotate-3";
                 } else if (d.isToday) {
-                  className += "border border-primary text-primary font-bold";
+                  className += "bg-white border-foreground text-foreground shadow-[2px_2px_0_0_#1E293B] scale-110";
                 } else if (d.isCompleted) {
-                  className += "bg-primary/10 text-primary";
+                  className += "bg-tertiary/60 border-foreground text-foreground rounded-full";
                 } else {
-                  className += "text-gray-700";
+                  className += "text-foreground hover:bg-muted";
                 }
 
                 return (
-                  <div key={i} className={className}>
-                    {d.day}
+                  <div key={i} className="flex justify-center items-center">
+                    <span className={className}>
+                      {d.day}
+                    </span>
                   </div>
                 );
               })}
